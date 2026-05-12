@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MANAGER
+  SALES
+  VIEWER
+}
+
+enum CampaignStatus {
+  DRAFT
+  READY
+  LIVE
+  PAUSED
+  COMPLETED
+}
+
+enum LeadClassification {
+  HOT
+  WARM
+  COLD
+  NOT_INTERESTED
+  WRONG_TARGET_GROUP
+  CALL_BACK_LATER
+  INVALID_NUMBER
+  CONVERTED
+  NEEDS_HUMAN_FOLLOW_UP
+  DO_NOT_CONTACT
+}
+
+enum CallStatus {
+  PENDING
+  IN_PROGRESS
+  CONNECTED
+  NO_ANSWER
+  FAILED
+  SCHEDULED
+}
+
+model User {
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  role        UserRole  @default(SALES)
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  assignedLeads Lead[] @relation("LeadAssignee")
+}
+
+model Workspace {
+  id                String   @id @default(cuid())
+  companyName       String
+  industry          String
+  website           String?
+  businessContext   Json
+  subscriptionPlan  String   @default("Growth Credits")
+  callCreditBalance Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  users          User[]
+  campaigns      Campaign[]
+  agents         Agent[]
+  leads          Lead[]
+  calls          Call[]
+  knowledgeBase  KnowledgeBase[]
+  followUpTasks  FollowUpTask[]
+  trainingAssets TrainingAsset[]
+  dncEntries     DncEntry[]
+  auditLogs      AuditLog[]
+  usageLedger    UsageLedger[]
+}
+
+model Campaign {
+  id                     String         @id @default(cuid())
+  workspaceId            String
+  workspace              Workspace      @relation(fields: [workspaceId], references: [id])
+  campaignName           String
+  objective              String
+  script                 String
+  language               String         @default("Hinglish")
+  agentId                String?
+  agent                  Agent?         @relation(fields: [agentId], references: [id])
+  status                 CampaignStatus @default(DRAFT)
+  qualificationQuestions Json
+  scoringRules           Json
+  handoffRules           Json
+  callingWindow          Json
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  leads         Lead[]
+  calls         Call[]
+  followUpTasks FollowUpTask[]
+}
+
+model Agent {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id])
+  name            String
+  voiceType       String
+  tone            String
+  language        String
+  instructions    Json
+  disclosureMode  String   @default("CLIENT_CONTROLLED")
+  knowledgeBaseId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  campaigns Campaign[]
+}
+
+model Lead {
+  id              String             @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace          @relation(fields: [workspaceId], references: [id])
+  campaignId      String?
+  campaign        Campaign?          @relation(fields: [campaignId], references: [id])
+  name            String
+  phone           String
+  email           String?
+  city            String?
+  source          String?
+  leadType        String?
+  notes           String?
+  customFields    Json
+  status          String             @default("ACTIVE")
+  classification  LeadClassification @default(COLD)
+  conversionScore Int                @default(0)
+  assignedToId    String?
+  assignedTo      User?              @relation("LeadAssignee", fields: [assignedToId], references: [id])
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  calls         Call[]
+  followUpTasks FollowUpTask[]
+
+  @@index([workspaceId, phone])
+  @@index([campaignId, classification])
+}
+
+model Call {
+  id               String             @id @default(cuid())
+  leadId           String
+  lead             Lead               @relation(fields: [leadId], references: [id])
+  campaignId       String
+  campaign         Campaign           @relation(fields: [campaignId], references: [id])
+  workspaceId      String
+  workspace        Workspace          @relation(fields: [workspaceId], references: [id])
+  callStatus       CallStatus         @default(PENDING)
+  provider         String?
+  providerCallId   String?
+  durationSeconds  Int?
+  recordingUrl     String?
+  transcript       String?
+  shortSummary     String?
+  detailedSummary  String?
+  classification   LeadClassification @default(COLD)
+  conversionScore  Int                @default(0)
+  intentScore      Int                @default(0)
+  sentiment        String?
+  tags             Json
+  objections       Json
+  extractedFields  Json
+  nextAction       String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([workspaceId, createdAt])
+  @@index([providerCallId])
+}
+
+model KnowledgeBase {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  title       String
+  content     String
+  fileUrl     String?
+  source      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TrainingAsset {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  title       String
+  type        String
+  fileUrl     String?
+  transcript  String?
+  insights    Json
+  status      String   @default("QUEUED")
+  createdAt   DateTime @default(now())
+}
+
+model FollowUpTask {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id])
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  taskType    String
+  dueDate     DateTime
+  status      String   @default("OPEN")
+  assignedTo  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DncEntry {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  phoneHash   String
+  reason      String
+  sourceLeadId String?
+  createdAt   DateTime @default(now())
+
+  @@unique([workspaceId, phoneHash])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  actorId     String?
+  action      String
+  metadata    Json
+  createdAt   DateTime @default(now())
+}
+
+model UsageLedger {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  eventType   String
+  units       Int
+  costPaise   Int?
+  metadata    Json
+  createdAt   DateTime @default(now())
+}
