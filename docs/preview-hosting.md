@@ -19,12 +19,11 @@ Current live preview:
 
 ## Safe Preview Checklist
 
-- Keep the app in demo mode with mock data.
-- Do not add real student phone numbers to the preview.
-- Do not enable live calling for public reviewers.
-- Use fake API credentials or no credentials for telephony/WhatsApp.
-- Add password protection if sharing beyond a small trusted buyer group.
-- Capture feedback through `/feedback`, Tally, Typeform, Airtable, Notion, or Google Forms.
+- Keep buyer demos on fictional leads unless a pilot client has explicitly approved real lead data.
+- Add `PILOT_ADMIN_EMAIL`, `PILOT_ADMIN_PASSWORD`, and `VOICELEAD_SESSION_SECRET` before sharing protected workspace pages.
+- Do not add live call or WhatsApp credentials to public review deployments.
+- Use a separate Vercel preview or environment for the controlled 10-lead live-call pilot.
+- Capture feedback through `/feedback`, then persist it through the DB-backed `/api/feedback` route.
 
 ## Vercel Preview Steps
 
@@ -37,6 +36,9 @@ Current live preview:
 ## Environment Variables Needed Later
 
 ```bash
+VOICELEAD_SESSION_SECRET=
+PILOT_ADMIN_EMAIL=
+PILOT_ADMIN_PASSWORD=
 PLIVO_AUTH_ID=
 PLIVO_AUTH_TOKEN=
 PLIVO_FROM_NUMBER=
@@ -44,4 +46,6 @@ APP_BASE_URL=
 WHATSAPP_ACCESS_TOKEN=
 WHATSAPP_PHONE_NUMBER_ID=
 DATABASE_URL=
+OPENAI_API_KEY=
+BOOTSTRAP_TOKEN=
 ```

@@ -1,9 +1,15 @@
 import { Download, Filter, UploadCloud } from "lucide-react";
-import { leads, leadCategories } from "@/lib/mock-data";
+import { leadCategories } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getWorkspaceSnapshot } from "@/lib/store";
 import { LeadTable } from "@/components/lead-table";
 import { StatusBadge } from "@/components/status-badge";
 
-export default function LeadsPage() {
+export default async function LeadsPage() {
+  const session = await getCurrentSession();
+  const snapshot = await getWorkspaceSnapshot(session?.workspaceId);
+  const { leads, campaigns } = snapshot;
+
   return (
     <div className="space-y-6">
       <section className="flex flex-wrap items-center justify-between gap-3">
@@ -55,6 +61,11 @@ export default function LeadsPage() {
           encType="multipart/form-data"
           className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto]"
         >
+          <input
+            name="campaignId"
+            type="hidden"
+            value={campaigns[0]?.id ?? "camp_ugp_2027"}
+          />
           <input
             name="file"
             type="file"

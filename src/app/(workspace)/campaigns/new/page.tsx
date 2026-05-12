@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   ArrowRight,
   Bot,
@@ -26,7 +25,7 @@ const scoringRules = [
 
 export default function CreateCampaignPage() {
   return (
-    <div className="space-y-6">
+    <form action="/api/campaigns" method="post" className="space-y-6">
       <section>
         <p className="text-sm font-semibold uppercase tracking-normal text-cyan-800">
           Create campaign
@@ -45,16 +44,17 @@ export default function CreateCampaignPage() {
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {[
-                ["Campaign name", "UG 2027 Inbound Lead Qualification"],
-                ["Objective", "Lead qualification"],
-                ["Target industry", "Education - undergraduate admissions"],
-                ["Language", "Hinglish + English"],
-              ].map(([label, value]) => (
+                ["Campaign name", "campaignName", "UG 2027 Inbound Lead Qualification"],
+                ["Objective", "objective", "Lead qualification"],
+                ["Target industry", "targetIndustry", "Education - undergraduate admissions"],
+                ["Language", "language", "Hinglish"],
+              ].map(([label, name, value]) => (
                 <label key={label} className="block">
                   <span className="text-sm font-medium text-zinc-800">
                     {label}
                   </span>
                   <input
+                    name={name}
                     defaultValue={value}
                     className="mt-2 h-11 w-full rounded-md border border-line bg-white px-3 text-sm outline-none focus:border-cyan-700"
                   />
@@ -95,6 +95,7 @@ export default function CreateCampaignPage() {
                 Opening pitch
               </span>
               <textarea
+                name="script"
                 defaultValue="Hi {{lead_name}}, I am calling from the Masters' Union admissions team about your interest in the undergraduate programmes. Is this a good time?"
                 className="mt-2 min-h-24 w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-cyan-700"
               />
@@ -121,6 +122,12 @@ export default function CreateCampaignPage() {
                 </label>
               ))}
             </div>
+            <textarea
+              name="qualificationQuestions"
+              defaultValue={templateQuestions.join("\n")}
+              className="hidden"
+              aria-hidden="true"
+            />
           </section>
         </div>
 
@@ -140,6 +147,23 @@ export default function CreateCampaignPage() {
                 </div>
               ))}
             </div>
+            <textarea
+              name="scoringRules"
+              defaultValue={scoringRules.join("\n")}
+              className="hidden"
+              aria-hidden="true"
+            />
+            <textarea
+              name="handoffRules"
+              defaultValue={[
+                "Score above 75",
+                "Parent asks fee or scholarship question",
+                "Student wants counselor callback",
+                "Prospect requests WhatsApp follow-up",
+              ].join("\n")}
+              className="hidden"
+              aria-hidden="true"
+            />
           </section>
 
           <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
@@ -153,15 +177,14 @@ export default function CreateCampaignPage() {
             </div>
           </section>
 
-          <Link
-            href="/campaigns"
+          <button
             className="focus-ring inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
           >
             Save campaign
             <ArrowRight className="h-4 w-4" />
-          </Link>
+          </button>
         </aside>
       </section>
-    </div>
+    </form>
   );
 }

@@ -80,6 +80,7 @@ model Workspace {
   dncEntries     DncEntry[]
   auditLogs      AuditLog[]
   usageLedger    UsageLedger[]
+  feedback       Feedback[]
 }
 
 model Campaign {
@@ -233,6 +234,22 @@ model DncEntry {
   createdAt   DateTime @default(now())
 
   @@unique([workspaceId, phoneHash])
+}
+
+model Feedback {
+  id          String    @id @default(cuid())
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+  name        String?
+  company     String?
+  role        String?
+  pilotIntent String?
+  mostValuable String?
+  friction    String?
+  metadata    Json
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId, createdAt])
 }
 
 model AuditLog {

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, MessageCircle, PhoneCall, UserRound } from "lucide-react";
-import { getCallsForLead, getLeadById } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getCallsForLead, getLead } from "@/lib/store";
 import { ProgressBar } from "@/components/progress-bar";
 import { StatusBadge } from "@/components/status-badge";
 
@@ -11,13 +12,14 @@ export default async function LeadDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const lead = getLeadById(id);
+  const session = await getCurrentSession();
+  const lead = await getLead(id, session?.workspaceId);
 
   if (!lead) {
     notFound();
   }
 
-  const leadCalls = getCallsForLead(lead.id);
+  const leadCalls = await getCallsForLead(lead.id, session?.workspaceId);
 
   return (
     <div className="space-y-6">
@@ -94,6 +96,19 @@ export default async function LeadDetailPage({
             <p className="mt-3 text-sm leading-6 text-zinc-700">
               {lead.nextAction}
             </p>
+            <form action="/api/followups/whatsapp" method="post" className="mt-4">
+              <input type="hidden" name="leadId" value={lead.id} />
+              <input type="hidden" name="phone" value={lead.phone} />
+              <input
+                type="hidden"
+                name="message"
+                value="Thanks for speaking with us. Sharing the approved UGP 2027 details and counselor callback slot."
+              />
+              <button className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-100">
+                <MessageCircle className="h-4 w-4" />
+                Send WhatsApp follow-up
+              </button>
+            </form>
           </section>
           <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2">
@@ -110,6 +125,25 @@ export default async function LeadDetailPage({
                 </div>
               ))}
             </dl>
+          </section>
+          <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <PhoneCall className="h-5 w-5 text-cyan-800" />
+              <h3 className="font-semibold text-zinc-950">Live test call</h3>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-ink-soft">
+              Starts a Plivo call when provider env vars are set; otherwise it
+              creates a dry-run call record for QA.
+            </p>
+            <form action="/api/telephony/plivo/start-call" method="post" className="mt-4">
+              <input type="hidden" name="to" value={lead.phone} />
+              <input type="hidden" name="leadId" value={lead.id} />
+              <input type="hidden" name="campaignId" value={lead.campaignId} />
+              <button className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-3 text-sm font-semibold text-white hover:bg-zinc-800">
+                <PhoneCall className="h-4 w-4" />
+                Start test call
+              </button>
+            </form>
           </section>
         </aside>
       </section>

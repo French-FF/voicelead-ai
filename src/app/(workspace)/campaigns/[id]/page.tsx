@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Bot, ListChecks, PhoneCall } from "lucide-react";
-import { agents, getCampaignById, leads } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getWorkspaceSnapshot } from "@/lib/store";
 import { LeadTable } from "@/components/lead-table";
 import { StatusBadge } from "@/components/status-badge";
 
@@ -11,14 +12,16 @@ export default async function CampaignDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const campaign = getCampaignById(id);
+  const session = await getCurrentSession();
+  const snapshot = await getWorkspaceSnapshot(session?.workspaceId);
+  const campaign = snapshot.campaigns.find((item) => item.id === id);
 
   if (!campaign) {
     notFound();
   }
 
-  const agent = agents.find((item) => item.id === campaign.agentId);
-  const campaignLeads = leads.filter((lead) => lead.campaignId === campaign.id);
+  const agent = snapshot.agents.find((item) => item.id === campaign.agentId);
+  const campaignLeads = snapshot.leads.filter((lead) => lead.campaignId === campaign.id);
 
   return (
     <div className="space-y-6">

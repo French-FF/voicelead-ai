@@ -1,5 +1,6 @@
 import { CreditCard, IndianRupee, PhoneCall, ReceiptText } from "lucide-react";
-import { workspace } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getWorkspaceSnapshot } from "@/lib/store";
 import { ProgressBar } from "@/components/progress-bar";
 
 const usageRows = [
@@ -9,7 +10,10 @@ const usageRows = [
   { label: "Training audio minutes", used: 94, limit: 500 },
 ];
 
-export default function BillingPage() {
+export default async function BillingPage() {
+  const session = await getCurrentSession();
+  const { workspace } = await getWorkspaceSnapshot(session?.workspaceId);
+
   return (
     <div className="space-y-6">
       <section>

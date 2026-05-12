@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { ArrowRight, Clock3, MessageCircle, PhoneCall } from "lucide-react";
 import {
-  campaigns,
+  campaigns as fallbackCampaigns,
   dashboardMetrics,
-  followUpTasks,
-  leads,
   objectionTrends,
   sourcePerformance,
 } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getWorkspaceSnapshot } from "@/lib/store";
 import { LeadTable } from "@/components/lead-table";
 import { MetricCard } from "@/components/metric-card";
 import { ProgressBar } from "@/components/progress-bar";
@@ -15,9 +15,45 @@ import { DemoPath } from "@/components/demo-path";
 import { ReadinessPanel } from "@/components/readiness-panel";
 import { StatusBadge } from "@/components/status-badge";
 
-export default function DashboardPage() {
-  const liveCampaign = campaigns[0];
-  const priorityLeads = leads
+export default async function DashboardPage() {
+  const session = await getCurrentSession();
+  const snapshot = await getWorkspaceSnapshot(session?.workspaceId);
+  const liveCampaign = snapshot.campaigns[0] ?? fallbackCampaigns[0];
+  const metrics = [
+    { label: "Total leads", value: snapshot.leads.length.toLocaleString("en-IN"), delta: `${snapshot.mode} mode` },
+    {
+      label: "Calls completed",
+      value: snapshot.calls.filter((call) => call.callStatus === "Connected").length.toLocaleString("en-IN"),
+      delta: `${snapshot.calls.length} total calls`,
+    },
+    {
+      label: "Hot leads",
+      value: snapshot.leads.filter((lead) => lead.classification === "Hot").length.toLocaleString("en-IN"),
+      delta: "Ready for counselor follow-up",
+    },
+    {
+      label: "Callback requests",
+      value: snapshot.followUpTasks.length.toLocaleString("en-IN"),
+      delta: "Open follow-up tasks",
+    },
+    {
+      label: "Avg score",
+      value:
+        snapshot.leads.length > 0
+          ? Math.round(
+              snapshot.leads.reduce((sum, lead) => sum + lead.conversionScore, 0) /
+                snapshot.leads.length,
+            ).toString()
+          : "0",
+      delta: "Across current lead set",
+    },
+    {
+      label: "Credits left",
+      value: snapshot.workspace.callCreditBalance.toLocaleString("en-IN"),
+      delta: snapshot.workspace.subscriptionPlan,
+    },
+  ];
+  const priorityLeads = snapshot.leads
     .filter((lead) =>
       ["Hot", "Needs Human Follow-Up", "Call Back Later"].includes(
         lead.classification,
@@ -30,7 +66,7 @@ export default function DashboardPage() {
       <DemoPath />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        {dashboardMetrics.map((metric) => (
+        {(snapshot.leads.length ? metrics : dashboardMetrics).map((metric) => (
           <MetricCard key={metric.label} {...metric} />
         ))}
       </section>
@@ -152,8 +188,8 @@ export default function DashboardPage() {
               <h2 className="font-semibold text-zinc-950">Follow-up queue</h2>
             </div>
             <div className="mt-4 space-y-3">
-              {followUpTasks.map((task) => {
-                const lead = leads.find((item) => item.id === task.leadId);
+              {snapshot.followUpTasks.map((task) => {
+                const lead = snapshot.leads.find((item) => item.id === task.leadId);
                 return (
                   <div
                     key={task.id}

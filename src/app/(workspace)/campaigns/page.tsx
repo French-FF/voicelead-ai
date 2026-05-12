@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { ArrowRight, Bot, ListChecks, Plus } from "lucide-react";
-import { agents, campaigns } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getWorkspaceSnapshot } from "@/lib/store";
 import { ProgressBar } from "@/components/progress-bar";
 import { StatusBadge } from "@/components/status-badge";
 
-export default function CampaignsPage() {
+export default async function CampaignsPage() {
+  const session = await getCurrentSession();
+  const { agents, campaigns } = await getWorkspaceSnapshot(session?.workspaceId);
+
   return (
     <div className="space-y-6">
       <section className="flex flex-wrap items-center justify-between gap-3">

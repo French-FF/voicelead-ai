@@ -4,6 +4,8 @@ import {
   objectionTrends,
   sourcePerformance,
 } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getWorkspaceSnapshot } from "@/lib/store";
 import { MetricCard } from "@/components/metric-card";
 import { ProgressBar } from "@/components/progress-bar";
 
@@ -27,7 +29,37 @@ const timeSlots = [
   { slot: "5 PM - 7 PM", rate: 53 },
 ];
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage() {
+  const session = await getCurrentSession();
+  const snapshot = await getWorkspaceSnapshot(session?.workspaceId);
+  const metrics = [
+    { label: "Total leads", value: snapshot.leads.length.toLocaleString("en-IN"), delta: `${snapshot.mode} mode` },
+    {
+      label: "Calls analyzed",
+      value: snapshot.calls.filter((call) => call.shortSummary).length.toLocaleString("en-IN"),
+      delta: "Transcript intelligence generated",
+    },
+    {
+      label: "Hot leads",
+      value: snapshot.leads.filter((lead) => lead.classification === "Hot").length.toLocaleString("en-IN"),
+      delta: "Counselor priority",
+    },
+    {
+      label: "DNC",
+      value: snapshot.leads.filter((lead) => lead.classification === "Do Not Contact").length.toLocaleString("en-IN"),
+      delta: "Suppressed from future calls",
+    },
+    {
+      label: "Avg score",
+      value:
+        snapshot.leads.length > 0
+          ? Math.round(snapshot.leads.reduce((sum, lead) => sum + lead.conversionScore, 0) / snapshot.leads.length).toString()
+          : "0",
+      delta: "Lead conversion probability",
+    },
+    { label: "Campaigns", value: snapshot.campaigns.length.toString(), delta: "Configured flows" },
+  ];
+
   return (
     <div className="space-y-6">
       <section>
@@ -40,7 +72,7 @@ export default function AnalyticsPage() {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        {dashboardMetrics.map((metric) => (
+        {(snapshot.leads.length ? metrics : dashboardMetrics).map((metric) => (
           <MetricCard key={metric.label} {...metric} />
         ))}
       </section>

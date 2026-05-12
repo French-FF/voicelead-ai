@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Bot, FileAudio, ListChecks, MessageSquareText } from "lucide-react";
-import { getCallById, getLeadById } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getCall, getLead } from "@/lib/store";
 import { ProgressBar } from "@/components/progress-bar";
 import { StatusBadge } from "@/components/status-badge";
 
@@ -10,13 +11,14 @@ export default async function CallDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const call = getCallById(id);
+  const session = await getCurrentSession();
+  const call = await getCall(id, session?.workspaceId);
 
   if (!call) {
     notFound();
   }
 
-  const lead = getLeadById(call.leadId);
+  const lead = await getLead(call.leadId, session?.workspaceId);
 
   return (
     <div className="space-y-6">

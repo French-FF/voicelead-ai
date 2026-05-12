@@ -1,8 +1,11 @@
 import { Bot, Gauge, Mic2, ShieldCheck } from "lucide-react";
-import { agents } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getWorkspaceSnapshot } from "@/lib/store";
 import { StatusBadge } from "@/components/status-badge";
 
-export default function AgentPage() {
+export default async function AgentPage() {
+  const session = await getCurrentSession();
+  const { agents } = await getWorkspaceSnapshot(session?.workspaceId);
   const agent = agents[0];
 
   return (

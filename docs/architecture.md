@@ -7,7 +7,7 @@
 - Backend: Next.js Route Handlers for MVP, later extract high-throughput calling workers.
 - Database: PostgreSQL on Supabase or Neon.
 - ORM: Prisma schema included in `prisma/schema.prisma`.
-- Auth: Clerk or Supabase Auth for production; this skeleton includes login UI only.
+- Auth: pilot-grade signed HTTP-only session cookie with env-configured admin credentials. Clerk/Supabase Auth can replace it when multiple client teams need self-serve signup.
 - Storage: Supabase Storage, S3, or Cloudflare R2 for recordings, transcripts, and uploads.
 - Telephony: Plivo-first MVP hook, evaluate Exotel for India production compliance and support.
 - Queue: BullMQ + Redis for MVP, Temporal/Inngest later for durable retries.
@@ -20,13 +20,17 @@
 3. Campaign scheduler enqueues calls within allowed calling windows.
 4. Worker starts outbound call through telephony provider.
 5. Provider sends call events and recordings to webhooks.
-6. STT converts recordings or live streams to transcript.
-7. LLM generates structured summary, tags, objections, extracted fields, classification, and score.
+6. Plivo speech input captures short conversational turns for the pilot; STT/live streaming can replace this for richer real-time calls.
+7. OpenAI Responses API generates structured summary, tags, objections, extracted fields, classification, and score. If no key is configured, a rule-based fallback keeps QA flows testable.
 8. Follow-up engine creates WhatsApp, human callback, email, SMS, or CRM tasks.
 9. Dashboard reads aggregated campaign, source, city, language, and objection metrics.
 
 ## API Routes in This Skeleton
 
+- `GET /api/health`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `POST /api/admin/seed`
 - `GET /api/campaigns`
 - `POST /api/campaigns`
 - `GET /api/leads`
@@ -35,6 +39,7 @@
 - `POST /api/calls/mock-summarize`
 - `POST /api/telephony/plivo/start-call`
 - `GET|POST /api/webhooks/plivo/answer`
+- `POST /api/webhooks/plivo/input`
 - `POST /api/webhooks/plivo/status`
 - `POST /api/followups/whatsapp`
 
@@ -49,12 +54,19 @@ Production validation:
 - Validate DND/consent handling.
 - Compare Exotel, Knowlarity, MyOperator, Airtel IQ, Tata Tele, and Ozonetel for India-specific support.
 
-The current Plivo hook returns a dry-run payload until these env vars are set:
+The current Plivo hook creates a call record in both dry-run and live modes. It returns a dry-run payload until these env vars are set:
 
 - `PLIVO_AUTH_ID`
 - `PLIVO_AUTH_TOKEN`
 - `PLIVO_FROM_NUMBER`
 - `APP_BASE_URL`
+
+Pilot call behavior:
+
+- `/api/telephony/plivo/start-call` creates a call record and starts the provider call.
+- `/api/webhooks/plivo/answer` returns Plivo XML with a speech input prompt.
+- `/api/webhooks/plivo/input` records short lead responses, asks the next AI-generated/fallback question, and summarizes after the final turn.
+- `/api/webhooks/plivo/status` persists provider status, duration, recording URL, and payload metadata.
 
 ## AI Provider Comparison
 
@@ -95,6 +107,22 @@ The current Plivo hook returns a dry-run payload until these env vars are set:
 - Expose webhook base URL through `APP_BASE_URL`.
 - Add environment-specific provider credentials.
 - Run a small real-call pilot before enabling campaign-wide concurrency.
+
+Operational pilot env vars:
+
+- `DATABASE_URL`
+- `VOICELEAD_SESSION_SECRET`
+- `PILOT_ADMIN_EMAIL`
+- `PILOT_ADMIN_PASSWORD`
+- `BOOTSTRAP_TOKEN`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `PLIVO_AUTH_ID`
+- `PLIVO_AUTH_TOKEN`
+- `PLIVO_FROM_NUMBER`
+- `APP_BASE_URL`
+- `WHATSAPP_ACCESS_TOKEN`
+- `WHATSAPP_PHONE_NUMBER_ID`
 
 ## Cost Estimate Per Call
 

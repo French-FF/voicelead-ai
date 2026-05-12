@@ -1,17 +1,21 @@
 import { Activity, AlertTriangle, Building2, ShieldCheck } from "lucide-react";
-import { campaigns, workspace } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getOperationalStatus, getWorkspaceSnapshot } from "@/lib/store";
 import { StatusBadge } from "@/components/status-badge";
 
-const platformRows = [
-  ["Clients", "1 active pilot"],
-  ["Provider", "Plivo first, Exotel fallback"],
-  ["AI usage", "Mock summaries plus OpenAI hook next"],
-  ["Compliance", "DNC, audit logs, calling windows"],
-  ["Failed calls", "42 this week"],
-  ["Estimated gross margin", "Needs live provider data"],
-];
+export default async function AdminPage() {
+  const session = await getCurrentSession();
+  const { campaigns, workspace } = await getWorkspaceSnapshot(session?.workspaceId);
+  const status = getOperationalStatus();
+  const platformRows = [
+    ["Clients", "1 active pilot"],
+    ["Data mode", status.mode],
+    ["Telephony", status.providers.plivo ? "Plivo live" : "Plivo dry-run"],
+    ["AI usage", status.providers.openai ? "OpenAI live" : "Rule-based fallback"],
+    ["WhatsApp", status.providers.whatsapp ? "Cloud API live" : "Dry-run queued"],
+    ["Database", status.providers.database ? "Postgres configured" : "In-memory pilot"],
+  ];
 
-export default function AdminPage() {
   return (
     <div className="space-y-6">
       <section>

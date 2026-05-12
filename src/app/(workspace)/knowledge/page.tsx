@@ -1,8 +1,14 @@
 import { Database, FileAudio, FileText, UploadCloud } from "lucide-react";
-import { knowledgeBaseEntries, trainingAssets } from "@/lib/mock-data";
+import { getCurrentSession } from "@/lib/auth";
+import { getWorkspaceSnapshot } from "@/lib/store";
 import { StatusBadge } from "@/components/status-badge";
 
-export default function KnowledgePage() {
+export default async function KnowledgePage() {
+  const session = await getCurrentSession();
+  const { knowledgeBaseEntries, trainingAssets } = await getWorkspaceSnapshot(
+    session?.workspaceId,
+  );
+
   return (
     <div className="space-y-6">
       <section>

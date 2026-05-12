@@ -14,10 +14,11 @@ import {
   PhoneCall,
   Plus,
   ShieldCheck,
+  LogOut,
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { workspace } from "@/lib/mock-data";
+import type { Workspace } from "@/lib/types";
 
 type NavItem = {
   label: string;
@@ -38,7 +39,17 @@ const navItems: NavItem[] = [
   { label: "Feedback", href: "/feedback", icon: MessageSquareText },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  mode,
+  sessionEmail,
+  workspace,
+}: {
+  children: React.ReactNode;
+  mode: "database" | "memory";
+  sessionEmail: string;
+  workspace: Workspace;
+}) {
   const pathname = usePathname();
 
   return (
@@ -94,6 +105,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {workspace.companyName}
             </p>
             <p className="mt-1 text-xs text-ink-soft">{workspace.industry}</p>
+            <p className="mt-2 text-xs font-medium text-cyan-800">
+              {mode === "database" ? "DB-backed pilot" : "In-memory pilot"}
+            </p>
           </div>
         </div>
       </aside>
@@ -110,6 +124,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </h1>
             </div>
             <div className="flex items-center gap-2">
+              <span className="hidden rounded-md border border-line px-2 py-1 text-xs font-medium text-ink-soft md:inline-flex">
+                {sessionEmail}
+              </span>
               <Link
                 href="/feedback"
                 className="focus-ring hidden h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-100 sm:inline-flex"
@@ -124,6 +141,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Plus className="h-4 w-4" />
                 New campaign
               </Link>
+              <form action="/api/auth/logout" method="post">
+                <button
+                  className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-md border border-line bg-white text-zinc-700 hover:bg-zinc-100"
+                  aria-label="Log out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </form>
             </div>
           </div>
           <nav className="flex gap-2 overflow-x-auto border-t border-line px-4 py-2 sm:px-6 lg:hidden">
