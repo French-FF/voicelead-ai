@@ -64,6 +64,7 @@ before sharing with external testers.
 - `GET /api/campaigns`
 - `POST /api/campaigns`
 - `GET /api/leads`
+- `GET /api/leads/export`
 - `POST /api/leads/upload`
 - `POST /api/training-assets`
 - `POST /api/calls/mock-summarize`
@@ -141,4 +142,5 @@ WHATSAPP_TEMPLATE_LANGUAGE=en
 - Product requirements: `docs/product-requirements.md`
 - Technical architecture: `docs/architecture.md`
 - Preview hosting: `docs/preview-hosting.md`
+- Live pilot checklist: `docs/live-pilot-checklist.md`
 - Database schema: `prisma/schema.prisma`

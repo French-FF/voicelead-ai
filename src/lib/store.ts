@@ -29,7 +29,7 @@ import {
   trainingAssets as mockTrainingAssets,
   workspace as mockWorkspace,
 } from "./mock-data";
-import { DEFAULT_WORKSPACE_ID, hasDatabase, providerStatus } from "./config";
+import { DEFAULT_WORKSPACE_ID, hasDatabase, operationalReadiness } from "./config";
 import { getPrisma } from "./prisma";
 import type { ParsedLead } from "./csv";
 import { isValidIndianMobile } from "./csv";
@@ -1028,8 +1028,10 @@ export async function seedDemoWorkspace() {
 }
 
 export function getOperationalStatus() {
+  const readiness = operationalReadiness();
+
   return {
     mode: hasDatabase() ? "database" : "memory",
-    providers: providerStatus(),
+    ...readiness,
   };
 }

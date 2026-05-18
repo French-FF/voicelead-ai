@@ -24,6 +24,7 @@ Current live preview:
 - Do not add live call or WhatsApp credentials to public review deployments.
 - Use a separate Vercel preview or environment for the controlled 10-lead live-call pilot.
 - Capture feedback through `/feedback`, then persist it through the DB-backed `/api/feedback` route.
+- Use `docs/live-pilot-checklist.md` before moving a preview into a real-call pilot.
 
 ## Vercel Preview Steps
 

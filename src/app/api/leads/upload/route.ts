@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
+import { DOMParser as XmlDomParser } from "@xmldom/xmldom";
+import { readSheet } from "read-excel-file/browser";
 import { requireApiSession, unauthorized } from "@/lib/auth";
-import { parseLeadCsv } from "@/lib/csv";
+import { parseLeadCsv, parseLeadXlsxRows } from "@/lib/csv";
 import { importLeads } from "@/lib/store";
 
 export const runtime = "nodejs";
+
+function ensureDomParser() {
+  const globalWithDomParser = globalThis as unknown as {
+    DOMParser?: unknown;
+  };
+
+  globalWithDomParser.DOMParser ??= XmlDomParser;
+}
 
 export async function POST(request: Request) {
   try {
@@ -22,16 +32,13 @@ export async function POST(request: Request) {
     const extension = file.name.split(".").pop()?.toLowerCase();
 
     if (extension === "xlsx") {
-      return NextResponse.json({
-        fileName: file.name,
-        status: "queued",
-        message:
-          "XLSX received. Convert to CSV for this pilot build, or wire a workbook parser before larger imports.",
-      });
+      ensureDomParser();
     }
 
-    const text = await file.text();
-    const parsed = parseLeadCsv(text);
+    const parsed =
+      extension === "xlsx"
+        ? parseLeadXlsxRows(await readSheet(file))
+        : parseLeadCsv(await file.text());
     const result = await importLeads(session.workspaceId, campaignId, parsed);
 
     if (request.headers.get("accept")?.includes("text/html")) {
@@ -43,7 +50,20 @@ export async function POST(request: Request) {
       ...result,
       normalizedPreview: parsed.slice(0, 5),
     });
-  } catch {
-    return unauthorized();
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return unauthorized();
+    }
+
+    return NextResponse.json(
+      {
+        error: "Lead import failed.",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "Check the file format and required columns.",
+      },
+      { status: 400 },
+    );
   }
 }

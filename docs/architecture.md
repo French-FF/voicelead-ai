@@ -34,6 +34,7 @@
 - `GET /api/campaigns`
 - `POST /api/campaigns`
 - `GET /api/leads`
+- `GET /api/leads/export`
 - `POST /api/leads/upload`
 - `POST /api/training-assets`
 - `POST /api/calls/mock-summarize`

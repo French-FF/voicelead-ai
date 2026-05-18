@@ -22,7 +22,7 @@ export function LeadTable({ leads }: { leads: Lead[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-line bg-white">
-            {leads.map((lead) => (
+            {leads.length ? leads.map((lead) => (
               <tr key={lead.id} className="hover:bg-zinc-50">
                 <td className="px-4 py-4">
                   <div className="min-w-40">
@@ -73,7 +73,13 @@ export function LeadTable({ leads }: { leads: Lead[] }) {
                   </Link>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan={8} className="px-4 py-10 text-center text-sm text-ink-soft">
+                  No leads match the current view.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

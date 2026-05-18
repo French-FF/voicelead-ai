@@ -10,11 +10,17 @@ export default async function AdminPage() {
   const platformRows = [
     ["Clients", "1 active pilot"],
     ["Data mode", status.mode],
+    ["Buyer demo", status.readyForBuyerDemo ? "Ready" : "Needs pilot auth"],
+    ["Live calls", status.readyForLiveCalls ? "Ready" : "Needs DB, OpenAI, and Plivo"],
     ["Telephony", status.providers.plivo ? "Plivo live" : "Plivo dry-run"],
     ["AI usage", status.providers.openai ? "OpenAI live" : "Rule-based fallback"],
     ["WhatsApp", status.providers.whatsapp ? "Cloud API live" : "Dry-run queued"],
     ["Database", status.providers.database ? "Postgres configured" : "In-memory pilot"],
   ];
+  const setupRows = Object.entries(status.missing).map(([provider, missing]) => [
+    provider,
+    missing.length ? missing.join(", ") : "Configured",
+  ]);
 
   return (
     <div className="space-y-6">
@@ -100,6 +106,30 @@ export default async function AdminPage() {
             ))}
           </div>
         </article>
+      </section>
+
+      <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
+        <h3 className="font-semibold text-zinc-950">Live pilot setup</h3>
+        <p className="mt-2 text-sm leading-6 text-zinc-700">
+          These are the environment gaps between the current demo and a durable
+          live-call pilot.
+        </p>
+        <div className="mt-4 overflow-hidden rounded-lg border border-line">
+          <table className="min-w-full divide-y divide-line text-sm">
+            <tbody className="divide-y divide-line">
+              {setupRows.map(([provider, value]) => (
+                <tr key={provider}>
+                  <td className="bg-panel-muted px-4 py-3 font-medium capitalize text-zinc-800">
+                    {provider}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-zinc-700">
+                    {value}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );

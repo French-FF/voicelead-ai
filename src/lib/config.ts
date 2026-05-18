@@ -42,3 +42,39 @@ export function providerStatus() {
     ),
   };
 }
+
+export const providerRequirements = {
+  database: ["DATABASE_URL"],
+  openai: ["OPENAI_API_KEY"],
+  plivo: ["PLIVO_AUTH_ID", "PLIVO_AUTH_TOKEN", "PLIVO_FROM_NUMBER", "APP_BASE_URL"],
+  whatsapp: ["WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"],
+} as const;
+
+export function missingProviderEnv() {
+  return Object.fromEntries(
+    Object.entries(providerRequirements).map(([provider, keys]) => [
+      provider,
+      keys.filter((key) => !process.env[key]),
+    ]),
+  ) as Record<keyof typeof providerRequirements, string[]>;
+}
+
+export function operationalReadiness() {
+  const providers = providerStatus();
+  const missing = missingProviderEnv();
+
+  return {
+    providers,
+    missing,
+    readyForBuyerDemo: Boolean(
+      providers.database ||
+        (process.env.PILOT_ADMIN_EMAIL &&
+          process.env.PILOT_ADMIN_PASSWORD &&
+          process.env.VOICELEAD_SESSION_SECRET),
+    ),
+    readyForLiveCalls: Boolean(
+      providers.database && providers.openai && providers.plivo,
+    ),
+    readyForWhatsApp: providers.whatsapp,
+  };
+}

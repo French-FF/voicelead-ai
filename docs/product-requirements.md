@@ -29,8 +29,8 @@ The product is not a basic calling bot. It is a first-layer sales development sy
 - Company profile and admissions context setup.
 - Campaign list and create-campaign flow.
 - AI agent settings for voice, tone, Hinglish behavior, disclosure, do-not-say rules, and escalation.
-- CSV lead upload endpoint with validation for missing/invalid numbers and duplicates.
-- Lead table, filters, status badges, temperature categories, and export intent.
+- CSV/XLSX lead upload endpoint with validation for missing/invalid numbers and duplicates.
+- Lead table, filters, status badges, temperature categories, and priority lead export.
 - Lead detail page with custom fields, call history, score, tags, and next action.
 - Call detail page with mock transcript, summary, objections, extracted fields, score, tags, and recording placeholder.
 - Knowledge base with approved course context, FAQs, objection handling, and manual transcript/audio upload.
@@ -38,7 +38,7 @@ The product is not a basic calling bot. It is a first-layer sales development sy
 - Analytics for source, city, language, objection, and time-of-day performance.
 - Billing/usage page for monthly credits.
 - Super-admin page for SaaS owner controls.
-- API hooks for campaigns, leads, CSV upload, training assets, mock summaries, Plivo calls, Plivo webhooks, and WhatsApp follow-up.
+- API hooks for campaigns, leads, CSV/XLSX upload, lead export, training assets, mock summaries, Plivo calls, Plivo webhooks, and WhatsApp follow-up.
 
 ## Primary User Journeys
 

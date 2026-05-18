@@ -51,12 +51,18 @@ function parseCsvLine(line: string) {
   return values;
 }
 
-export function parseLeadCsv(text: string): ParsedLead[] {
-  const [headerLine, ...rows] = text.trim().split(/\r?\n/);
-  if (!headerLine) return [];
+function cellToString(value: unknown) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).trim();
+}
 
-  const headers = parseCsvLine(headerLine).map((header) =>
-    header.trim().toLowerCase(),
+function parseLeadRows(rows: unknown[][]): ParsedLead[] {
+  const [headerRow, ...dataRows] = rows;
+  if (!headerRow) return [];
+
+  const headers = headerRow.map((header) =>
+    cellToString(header).trim().toLowerCase(),
   );
   const known = new Set([
     "name",
@@ -71,11 +77,10 @@ export function parseLeadCsv(text: string): ParsedLead[] {
     "notes",
   ]);
 
-  return rows
+  return dataRows
     .map((row) => {
-      const values = parseCsvLine(row);
       const record = Object.fromEntries(
-        headers.map((header, index) => [header, values[index] ?? ""]),
+        headers.map((header, index) => [header, cellToString(row[index])]),
       );
       const customFields = Object.fromEntries(
         headers
@@ -96,6 +101,20 @@ export function parseLeadCsv(text: string): ParsedLead[] {
       };
     })
     .filter((lead) => lead.name || lead.phone);
+}
+
+export function parseLeadCsv(text: string): ParsedLead[] {
+  const rows = text
+    .trim()
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map(parseCsvLine);
+
+  return parseLeadRows(rows);
+}
+
+export function parseLeadXlsxRows(rows: unknown[][]): ParsedLead[] {
+  return parseLeadRows(rows);
 }
 
 export function isValidIndianMobile(phone: string) {
