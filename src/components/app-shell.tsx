@@ -30,7 +30,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Campaigns", href: "/campaigns", icon: Megaphone },
   { label: "Leads", href: "/leads", icon: Users },
-  { label: "Calls", href: "/calls/call_aanya_01", icon: PhoneCall },
+  { label: "Calls", href: "/calls", icon: PhoneCall },
   { label: "AI Agent", href: "/agent", icon: Bot },
   { label: "Knowledge", href: "/knowledge", icon: Database },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },

@@ -3,9 +3,8 @@ import { ArrowRight, Clock3, MessageCircle, PhoneCall } from "lucide-react";
 import {
   campaigns as fallbackCampaigns,
   dashboardMetrics,
-  objectionTrends,
-  sourcePerformance,
 } from "@/lib/mock-data";
+import { getObjectionTrends, getSourcePerformance } from "@/lib/analytics";
 import { getCurrentSession } from "@/lib/auth";
 import { getWorkspaceSnapshot } from "@/lib/store";
 import { LeadTable } from "@/components/lead-table";
@@ -19,6 +18,8 @@ export default async function DashboardPage() {
   const session = await getCurrentSession();
   const snapshot = await getWorkspaceSnapshot(session?.workspaceId);
   const liveCampaign = snapshot.campaigns[0] ?? fallbackCampaigns[0];
+  const objectionTrends = getObjectionTrends(snapshot.calls);
+  const sourcePerformance = getSourcePerformance(snapshot.leads);
   const metrics = [
     { label: "Total leads", value: snapshot.leads.length.toLocaleString("en-IN"), delta: `${snapshot.mode} mode` },
     {

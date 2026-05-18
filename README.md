@@ -47,6 +47,7 @@ before sharing with external testers.
 - `/campaigns/new` - controlled campaign creation flow
 - `/leads` - lead table and CSV upload
 - `/leads/lead_aanya` - lead detail example
+- `/calls` - call intelligence queue
 - `/calls/call_aanya_01` - call intelligence example
 - `/agent` - AI voice agent settings
 - `/knowledge` - knowledge base and transcript/audio uploads
@@ -112,6 +113,7 @@ The Plivo start-call route returns a dry-run payload until these are set:
 PLIVO_AUTH_ID=
 PLIVO_AUTH_TOKEN=
 PLIVO_FROM_NUMBER=
+PLIVO_WEBHOOK_SECRET=
 APP_BASE_URL=
 ```
 
@@ -125,12 +127,19 @@ WHATSAPP_TEMPLATE_NAME= # optional approved template name
 WHATSAPP_TEMPLATE_LANGUAGE=en
 ```
 
+Pilot upload limits:
+
+```bash
+LEAD_UPLOAD_MAX_BYTES=5242880
+TRAINING_ASSET_MAX_BYTES=26214400
+```
+
 ## End-to-End Pilot Flow
 
 1. Sign in at `/login`.
 2. Seed demo workspace through `/api/admin/seed` if using a fresh database.
 3. Create a campaign at `/campaigns/new`.
-4. Upload a CSV at `/leads`.
+4. Upload a CSV or XLSX at `/leads`.
 5. Open a lead detail page and click `Start test call`.
 6. Plivo answers through `/api/webhooks/plivo/answer` and speech turns route through `/api/webhooks/plivo/input`.
 7. If live AI is configured, call summaries use OpenAI. Otherwise the rule-based fallback still classifies and scores.

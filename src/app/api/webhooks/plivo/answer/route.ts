@@ -1,4 +1,5 @@
 import { getLead } from "@/lib/store";
+import { isPlivoWebhookAuthorized, withPlivoWebhookSecret } from "@/lib/config";
 
 export const runtime = "nodejs";
 
@@ -12,14 +13,22 @@ function escapeXml(value: string) {
 }
 
 export async function POST(request: Request) {
+  if (!isPlivoWebhookAuthorized(request)) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   const url = new URL(request.url);
   const callId = url.searchParams.get("callId") ?? "";
   const leadId = url.searchParams.get("leadId") ?? "";
   const campaignId = url.searchParams.get("campaignId") ?? "";
   const lead = leadId ? await getLead(leadId) : null;
   const name = lead?.name?.split(" ")[0] ?? "there";
-  const inputUrl = `${url.origin}/api/webhooks/plivo/input?callId=${callId}&leadId=${leadId}&campaignId=${campaignId}&turn=1`;
-  const recordingUrl = `${url.origin}/api/webhooks/plivo/status?callId=${callId}`;
+  const inputUrl = withPlivoWebhookSecret(
+    `${url.origin}/api/webhooks/plivo/input?callId=${callId}&leadId=${leadId}&campaignId=${campaignId}&turn=1`,
+  );
+  const recordingUrl = withPlivoWebhookSecret(
+    `${url.origin}/api/webhooks/plivo/status?callId=${callId}`,
+  );
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>

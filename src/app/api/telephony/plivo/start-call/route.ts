@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireApiSession, unauthorized } from "@/lib/auth";
-import { getBaseUrl } from "@/lib/config";
-import { createCallRecord, updateCallRecord } from "@/lib/store";
+import { getBaseUrl, withPlivoWebhookSecret } from "@/lib/config";
+import { normalizePhone, isValidIndianMobile } from "@/lib/csv";
+import { createCallRecord, getLead, updateCallRecord } from "@/lib/store";
 
 type StartCallRequest = {
   to?: string;
@@ -17,6 +18,7 @@ function missingEnv() {
     "PLIVO_AUTH_TOKEN",
     "PLIVO_FROM_NUMBER",
     "APP_BASE_URL",
+    "PLIVO_WEBHOOK_SECRET",
   ].filter((key) => !process.env[key]);
 }
 
@@ -37,17 +39,48 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+    const lead = await getLead(body.leadId, session.workspaceId);
+    if (!lead) {
+      return NextResponse.json({ error: "Lead not found." }, { status: 404 });
+    }
+    if (lead.campaignId && lead.campaignId !== body.campaignId) {
+      return NextResponse.json(
+        { error: "Lead does not belong to this campaign." },
+        { status: 409 },
+      );
+    }
+    if (["Do Not Contact", "Invalid Number"].includes(lead.classification)) {
+      return NextResponse.json(
+        {
+          error: "Lead is suppressed from calling.",
+          classification: lead.classification,
+        },
+        { status: 409 },
+      );
+    }
+
+    const to = normalizePhone(lead.phone || body.to);
+    if (!isValidIndianMobile(to)) {
+      return NextResponse.json(
+        { error: "Lead phone number is not a valid Indian mobile number." },
+        { status: 400 },
+      );
+    }
 
     const call = await createCallRecord({
       workspaceId: session.workspaceId,
       leadId: body.leadId,
       campaignId: body.campaignId,
-      to: body.to,
+      to,
       provider: "plivo",
     });
     const baseUrl = getBaseUrl(request);
-    const answerUrl = `${baseUrl}/api/webhooks/plivo/answer?callId=${call.id}&leadId=${body.leadId}&campaignId=${body.campaignId}`;
-    const statusUrl = `${baseUrl}/api/webhooks/plivo/status?callId=${call.id}`;
+    const answerUrl = withPlivoWebhookSecret(
+      `${baseUrl}/api/webhooks/plivo/answer?callId=${call.id}&leadId=${body.leadId}&campaignId=${body.campaignId}`,
+    );
+    const statusUrl = withPlivoWebhookSecret(
+      `${baseUrl}/api/webhooks/plivo/status?callId=${call.id}`,
+    );
 
     if (missing.length) {
       if (!contentType.includes("application/json")) {
@@ -64,7 +97,7 @@ export async function POST(request: Request) {
         missing,
         dryRunPayload: {
           from: process.env.PLIVO_FROM_NUMBER ?? "+91XXXXXXXXXX",
-          to: body.to,
+          to,
           answer_url: answerUrl,
           hangup_url: statusUrl,
         },
@@ -84,7 +117,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         from: process.env.PLIVO_FROM_NUMBER,
-        to: body.to,
+        to,
         answer_url: answerUrl,
         answer_method: "POST",
         hangup_url: statusUrl,

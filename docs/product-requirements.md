@@ -32,10 +32,11 @@ The product is not a basic calling bot. It is a first-layer sales development sy
 - CSV/XLSX lead upload endpoint with validation for missing/invalid numbers and duplicates.
 - Lead table, filters, status badges, temperature categories, and priority lead export.
 - Lead detail page with custom fields, call history, score, tags, and next action.
+- Calls queue with status, category, score, summary, and call detail links.
 - Call detail page with mock transcript, summary, objections, extracted fields, score, tags, and recording placeholder.
 - Knowledge base with approved course context, FAQs, objection handling, and manual transcript/audio upload.
 - Dashboard with campaign metrics, objections, source performance, callback queue, and call readiness.
-- Analytics for source, city, language, objection, and time-of-day performance.
+- Analytics derived from workspace leads/calls for source, city, language, objection, and time-of-day performance.
 - Billing/usage page for monthly credits.
 - Super-admin page for SaaS owner controls.
 - API hooks for campaigns, leads, CSV/XLSX upload, lead export, training assets, mock summaries, Plivo calls, Plivo webhooks, and WhatsApp follow-up.

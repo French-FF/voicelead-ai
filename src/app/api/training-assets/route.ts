@@ -4,6 +4,11 @@ import { createTrainingAsset } from "@/lib/store";
 
 export const runtime = "nodejs";
 
+const maxTrainingUploadBytes = Number(
+  process.env.TRAINING_ASSET_MAX_BYTES ?? 25 * 1024 * 1024,
+);
+const supportedExtensions = new Set(["txt", "csv", "docx", "mp3", "wav", "m4a"]);
+
 export async function POST(request: Request) {
   try {
     const session = requireApiSession(request);
@@ -16,6 +21,25 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Attach a transcript or audio recording." },
         { status: 400 },
+      );
+    }
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    if (!extension || !supportedExtensions.has(extension)) {
+      return NextResponse.json(
+        {
+          error:
+            "Training assets support TXT, CSV, DOCX, MP3, WAV, and M4A files.",
+        },
+        { status: 400 },
+      );
+    }
+    if (file.size > maxTrainingUploadBytes) {
+      return NextResponse.json(
+        {
+          error: "Training asset is too large for this pilot upload path.",
+          maxBytes: maxTrainingUploadBytes,
+        },
+        { status: 413 },
       );
     }
 
@@ -55,7 +79,20 @@ export async function POST(request: Request) {
       },
       { status: 202 },
     );
-  } catch {
-    return unauthorized();
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return unauthorized();
+    }
+
+    return NextResponse.json(
+      {
+        error: "Training asset upload failed.",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "Check the file format and try again.",
+      },
+      { status: 400 },
+    );
   }
 }

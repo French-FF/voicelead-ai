@@ -7,6 +7,9 @@ import { importLeads } from "@/lib/store";
 
 export const runtime = "nodejs";
 
+const maxLeadUploadBytes = Number(process.env.LEAD_UPLOAD_MAX_BYTES ?? 5 * 1024 * 1024);
+const allowedExtensions = new Set(["csv", "xlsx"]);
+
 function ensureDomParser() {
   const globalWithDomParser = globalThis as unknown as {
     DOMParser?: unknown;
@@ -30,6 +33,21 @@ export async function POST(request: Request) {
     }
 
     const extension = file.name.split(".").pop()?.toLowerCase();
+    if (!extension || !allowedExtensions.has(extension)) {
+      return NextResponse.json(
+        { error: "Lead import supports CSV and XLSX files only." },
+        { status: 400 },
+      );
+    }
+    if (file.size > maxLeadUploadBytes) {
+      return NextResponse.json(
+        {
+          error: "Lead import file is too large.",
+          maxBytes: maxLeadUploadBytes,
+        },
+        { status: 413 },
+      );
+    }
 
     if (extension === "xlsx") {
       ensureDomParser();

@@ -131,7 +131,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2">
           <UploadCloud className="h-5 w-5 text-cyan-800" />
-          <h3 className="font-semibold text-zinc-950">CSV lead import</h3>
+          <h3 className="font-semibold text-zinc-950">CSV/XLSX lead import</h3>
         </div>
         <form
           action="/api/leads/upload"

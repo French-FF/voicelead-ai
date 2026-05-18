@@ -61,6 +61,7 @@ The current Plivo hook creates a call record in both dry-run and live modes. It 
 - `PLIVO_AUTH_TOKEN`
 - `PLIVO_FROM_NUMBER`
 - `APP_BASE_URL`
+- `PLIVO_WEBHOOK_SECRET`
 
 Pilot call behavior:
 
@@ -121,6 +122,7 @@ Operational pilot env vars:
 - `PLIVO_AUTH_ID`
 - `PLIVO_AUTH_TOKEN`
 - `PLIVO_FROM_NUMBER`
+- `PLIVO_WEBHOOK_SECRET`
 - `APP_BASE_URL`
 - `WHATSAPP_ACCESS_TOKEN`
 - `WHATSAPP_PHONE_NUMBER_ID`

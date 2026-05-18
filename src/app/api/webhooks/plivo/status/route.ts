@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isPlivoWebhookAuthorized } from "@/lib/config";
 import { findCallByProviderId, updateCallRecord } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -11,12 +12,23 @@ function statusToCallStatus(status: string) {
   return "In Progress";
 }
 
-export async function POST(request: Request) {
-  const url = new URL(request.url);
+async function readWebhookPayload(request: Request) {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    return (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  }
+
   const formData = await request.formData().catch(() => null);
-  const payload = formData
-    ? Object.fromEntries(formData.entries())
-    : await request.json().catch(() => ({}));
+  return formData ? Object.fromEntries(formData.entries()) : {};
+}
+
+export async function POST(request: Request) {
+  if (!isPlivoWebhookAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const url = new URL(request.url);
+  const payload = await readWebhookPayload(request);
   const callId = url.searchParams.get("callId");
   const providerCallId = String(
     payload.CallUUID ||

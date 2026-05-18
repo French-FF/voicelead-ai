@@ -32,7 +32,7 @@ import {
 import { DEFAULT_WORKSPACE_ID, hasDatabase, operationalReadiness } from "./config";
 import { getPrisma } from "./prisma";
 import type { ParsedLead } from "./csv";
-import { isValidIndianMobile } from "./csv";
+import { isValidIndianMobile, normalizePhone } from "./csv";
 
 type StoreMode = "database" | "memory";
 
@@ -547,6 +547,7 @@ export async function importLeads(
 ) {
   const seen = new Set<string>();
   const duplicateNumbers: string[] = [];
+  const dncNumbers: string[] = [];
   const invalidRows: ParsedLead[] = [];
   const created: Lead[] = [];
   const state = getMemoryState();
@@ -565,10 +566,32 @@ export async function importLeads(
 
     const existing = hasDatabase()
       ? null
-      : state.leads.find((item) => item.workspaceId === workspaceId && item.phone === phone);
+      : state.leads.find(
+          (item) =>
+            item.workspaceId === workspaceId &&
+            normalizePhone(item.phone) === phone,
+        );
 
     if (existing) {
       duplicateNumbers.push(phone);
+      continue;
+    }
+
+    const isSuppressed = hasDatabase()
+      ? Boolean(
+          await getPrisma().dncEntry.findUnique({
+            where: {
+              workspaceId_phoneHash: {
+                workspaceId,
+                phoneHash: await cryptoHash(phone),
+              },
+            },
+          }),
+        )
+      : state.dnc.some((item) => normalizePhone(item.phone) === phone);
+
+    if (isSuppressed) {
+      dncNumbers.push(phone);
       continue;
     }
 
@@ -629,6 +652,7 @@ export async function importLeads(
     parsedCount: parsed.length,
     validCount: created.length,
     duplicateNumbers,
+    dncNumbers,
     invalidRows,
     created,
   };
@@ -837,16 +861,45 @@ export async function markDoNotContact(
   reason: string,
   sourceLeadId?: string,
 ) {
+  const normalizedPhone = normalizePhone(phone);
+
   if (!hasDatabase()) {
-    getMemoryState().dnc.push({ phone, reason, createdAt: new Date().toISOString() });
+    const state = getMemoryState();
+    state.dnc.push({ phone: normalizedPhone, reason, createdAt: new Date().toISOString() });
+    state.leads = state.leads.map((lead) =>
+      lead.workspaceId === workspaceId && normalizePhone(lead.phone) === normalizedPhone
+        ? {
+            ...lead,
+            callStatus: "Connected",
+            classification: "Do Not Contact",
+            conversionScore: 0,
+            tags: Array.from(new Set([...lead.tags, "DNC", "Opt-out"])),
+            nextAction: "Suppress from all future campaigns",
+            followUpStatus: "Done",
+          }
+        : lead,
+    );
     return;
   }
 
-  const phoneHash = await cryptoHash(phone);
-  await getPrisma().dncEntry.upsert({
+  const prisma = getPrisma();
+  const phoneHash = await cryptoHash(normalizedPhone);
+  await prisma.dncEntry.upsert({
     where: { workspaceId_phoneHash: { workspaceId, phoneHash } },
     update: { reason },
     create: { workspaceId, phoneHash, reason, sourceLeadId },
+  });
+
+  await prisma.lead.updateMany({
+    where: {
+      workspaceId,
+      OR: [{ phone: normalizedPhone }, ...(sourceLeadId ? [{ id: sourceLeadId }] : [])],
+    },
+    data: {
+      status: "DNC",
+      classification: "DO_NOT_CONTACT",
+      conversionScore: 0,
+    },
   });
 }
 

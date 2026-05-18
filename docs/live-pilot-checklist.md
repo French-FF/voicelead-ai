@@ -54,6 +54,7 @@ Set these in Vercel production:
 PLIVO_AUTH_ID=
 PLIVO_AUTH_TOKEN=
 PLIVO_FROM_NUMBER=
+PLIVO_WEBHOOK_SECRET=
 APP_BASE_URL=https://voicelead-ai.vercel.app
 ```
 
@@ -62,6 +63,10 @@ The answer URL generated for Plivo is:
 ```text
 https://voicelead-ai.vercel.app/api/webhooks/plivo/answer
 ```
+
+When `PLIVO_WEBHOOK_SECRET` is set, VoiceLead automatically signs generated
+Plivo answer/input/status URLs with a `token` query parameter and rejects
+unsigned webhook traffic.
 
 Run a controlled test with 2-3 internal numbers before using student leads.
 

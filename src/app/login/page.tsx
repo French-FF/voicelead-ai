@@ -1,4 +1,5 @@
 import { ArrowRight, Building2, LockKeyhole, Mail } from "lucide-react";
+import { safeRedirectPath } from "@/lib/auth";
 
 export default async function LoginPage({
   searchParams,
@@ -6,6 +7,8 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const params = await searchParams;
+  const next = safeRedirectPath(params.next);
+  const showLocalDefaults = process.env.NODE_ENV !== "production";
 
   return (
     <main className="grid min-h-screen place-items-center bg-background px-4 py-10">
@@ -29,7 +32,7 @@ export default async function LoginPage({
         ) : null}
 
         <form action="/api/auth/login" method="post" className="mt-6 space-y-4">
-          <input type="hidden" name="next" value={params.next ?? "/dashboard"} />
+          <input type="hidden" name="next" value={next} />
           <label className="block">
             <span className="text-sm font-medium text-zinc-800">Email</span>
             <div className="mt-2 flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3">
@@ -63,10 +66,16 @@ export default async function LoginPage({
           </button>
         </form>
 
-        <p className="mt-4 text-xs leading-5 text-ink-soft">
-          Local default for development: admin@voicelead.ai / voicelead-pilot.
-          Change `PILOT_ADMIN_EMAIL` and `PILOT_ADMIN_PASSWORD` before sharing.
-        </p>
+        {showLocalDefaults ? (
+          <p className="mt-4 text-xs leading-5 text-ink-soft">
+            Local default for development: admin@voicelead.ai / voicelead-pilot.
+            Change `PILOT_ADMIN_EMAIL` and `PILOT_ADMIN_PASSWORD` before sharing.
+          </p>
+        ) : (
+          <p className="mt-4 text-xs leading-5 text-ink-soft">
+            Use the pilot credentials shared by your VoiceLead AI admin.
+          </p>
+        )}
       </section>
     </main>
   );

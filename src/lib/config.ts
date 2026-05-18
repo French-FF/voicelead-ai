@@ -34,7 +34,9 @@ export function providerStatus() {
     plivo: Boolean(
       process.env.PLIVO_AUTH_ID &&
         process.env.PLIVO_AUTH_TOKEN &&
-        process.env.PLIVO_FROM_NUMBER,
+        process.env.PLIVO_FROM_NUMBER &&
+        process.env.APP_BASE_URL &&
+        process.env.PLIVO_WEBHOOK_SECRET,
     ),
     whatsapp: Boolean(
       process.env.WHATSAPP_ACCESS_TOKEN &&
@@ -46,7 +48,13 @@ export function providerStatus() {
 export const providerRequirements = {
   database: ["DATABASE_URL"],
   openai: ["OPENAI_API_KEY"],
-  plivo: ["PLIVO_AUTH_ID", "PLIVO_AUTH_TOKEN", "PLIVO_FROM_NUMBER", "APP_BASE_URL"],
+  plivo: [
+    "PLIVO_AUTH_ID",
+    "PLIVO_AUTH_TOKEN",
+    "PLIVO_FROM_NUMBER",
+    "APP_BASE_URL",
+    "PLIVO_WEBHOOK_SECRET",
+  ],
   whatsapp: ["WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"],
 } as const;
 
@@ -73,8 +81,31 @@ export function operationalReadiness() {
           process.env.VOICELEAD_SESSION_SECRET),
     ),
     readyForLiveCalls: Boolean(
-      providers.database && providers.openai && providers.plivo,
+      providers.database &&
+        providers.openai &&
+        providers.plivo &&
+        missing.plivo.length === 0,
     ),
     readyForWhatsApp: providers.whatsapp,
   };
+}
+
+export function withPlivoWebhookSecret(rawUrl: string) {
+  const secret = process.env.PLIVO_WEBHOOK_SECRET;
+  if (!secret) return rawUrl;
+
+  const url = new URL(rawUrl);
+  url.searchParams.set("token", secret);
+  return url.toString();
+}
+
+export function isPlivoWebhookAuthorized(request: Request) {
+  const secret = process.env.PLIVO_WEBHOOK_SECRET;
+  if (!secret) return true;
+
+  const url = new URL(request.url);
+  return (
+    url.searchParams.get("token") === secret ||
+    request.headers.get("x-voicelead-webhook-secret") === secret
+  );
 }

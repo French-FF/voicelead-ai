@@ -105,6 +105,23 @@ export function validPilotCredentials(email: string, password: string) {
   );
 }
 
+export function safeRedirectPath(value?: string | null, fallback = "/dashboard") {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return fallback;
+  }
+
+  try {
+    const parsed = new URL(value, "https://voicelead.internal");
+    if (parsed.origin !== "https://voicelead.internal") {
+      return fallback;
+    }
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return fallback;
+  }
+}
+
 export function setSessionCookie(response: NextResponse, value: string) {
   response.cookies.set(SESSION_COOKIE, value, {
     httpOnly: true,

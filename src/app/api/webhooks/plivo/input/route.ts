@@ -1,4 +1,5 @@
 import { analyzeTranscript, generateNextVoiceTurn } from "@/lib/call-intelligence";
+import { isPlivoWebhookAuthorized, withPlivoWebhookSecret } from "@/lib/config";
 import { getCall, getLead, markDoNotContact, updateCallRecord } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -23,16 +24,27 @@ function readSpeech(payload: Record<string, FormDataEntryValue> | Record<string,
   ).trim();
 }
 
+async function readWebhookPayload(request: Request) {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    return (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  }
+
+  const formData = await request.formData().catch(() => null);
+  return formData ? Object.fromEntries(formData.entries()) : {};
+}
+
 export async function POST(request: Request) {
+  if (!isPlivoWebhookAuthorized(request)) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   const url = new URL(request.url);
   const callId = url.searchParams.get("callId") ?? "";
   const leadId = url.searchParams.get("leadId") ?? "";
   const campaignId = url.searchParams.get("campaignId") ?? "";
   const turn = Number(url.searchParams.get("turn") ?? "1");
-  const formData = await request.formData().catch(() => null);
-  const payload = formData
-    ? Object.fromEntries(formData.entries())
-    : await request.json().catch(() => ({}));
+  const payload = await readWebhookPayload(request);
   const speech = readSpeech(payload);
   const lead = leadId ? await getLead(leadId) : null;
   const existingCall = callId ? await getCall(callId) : null;
@@ -95,7 +107,9 @@ export async function POST(request: Request) {
     return new Response(xml, { headers: { "Content-Type": "application/xml" } });
   }
 
-  const inputUrl = `${url.origin}/api/webhooks/plivo/input?callId=${callId}&leadId=${leadId}&campaignId=${campaignId}&turn=${turn + 1}`;
+  const inputUrl = withPlivoWebhookSecret(
+    `${url.origin}/api/webhooks/plivo/input?callId=${callId}&leadId=${leadId}&campaignId=${campaignId}&turn=${turn + 1}`,
+  );
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <GetInput action="${escapeXml(inputUrl)}" method="POST" inputType="speech" language="en-IN" speechEndTimeout="1" timeout="7">

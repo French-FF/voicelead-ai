@@ -1,37 +1,25 @@
 import { BarChart3, Clock3, Languages, MapPin } from "lucide-react";
+import { dashboardMetrics } from "@/lib/mock-data";
 import {
-  dashboardMetrics,
-  objectionTrends,
-  sourcePerformance,
-} from "@/lib/mock-data";
+  getCityPerformance,
+  getLanguagePerformance,
+  getObjectionTrends,
+  getSourcePerformance,
+  getTimeOfDayPerformance,
+} from "@/lib/analytics";
 import { getCurrentSession } from "@/lib/auth";
 import { getWorkspaceSnapshot } from "@/lib/store";
 import { MetricCard } from "@/components/metric-card";
 import { ProgressBar } from "@/components/progress-bar";
 
-const cityPerformance = [
-  { city: "Gurugram", leads: 214, score: 76 },
-  { city: "Mumbai", leads: 188, score: 68 },
-  { city: "Bengaluru", leads: 142, score: 71 },
-  { city: "Hyderabad", leads: 116, score: 63 },
-  { city: "Pune", leads: 97, score: 66 },
-];
-
-const languagePerformance = [
-  { language: "Hinglish", connected: 344, score: 71 },
-  { language: "English", connected: 168, score: 62 },
-];
-
-const timeSlots = [
-  { slot: "10 AM - 12 PM", rate: 41 },
-  { slot: "12 PM - 2 PM", rate: 34 },
-  { slot: "3 PM - 5 PM", rate: 47 },
-  { slot: "5 PM - 7 PM", rate: 53 },
-];
-
 export default async function AnalyticsPage() {
   const session = await getCurrentSession();
   const snapshot = await getWorkspaceSnapshot(session?.workspaceId);
+  const objectionTrends = getObjectionTrends(snapshot.calls);
+  const cityPerformance = getCityPerformance(snapshot.leads);
+  const languagePerformance = getLanguagePerformance(snapshot.calls);
+  const sourcePerformance = getSourcePerformance(snapshot.leads);
+  const timeSlots = getTimeOfDayPerformance(snapshot.calls);
   const metrics = [
     { label: "Total leads", value: snapshot.leads.length.toLocaleString("en-IN"), delta: `${snapshot.mode} mode` },
     {
